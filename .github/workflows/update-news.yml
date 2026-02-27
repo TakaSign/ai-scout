@@ -1,0 +1,33 @@
+name: 毎日ニュース自動更新
+
+on:
+  schedule:
+    # 毎朝7:30 JST（UTCで22:30）に実行
+    - cron: '30 22 * * *'
+  workflow_dispatch: # 手動実行ボタンも有効化
+
+jobs:
+  fetch-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: ニュースを取得してindex.htmlを更新
+        env:
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        run: node fetch-news.js
+
+      - name: 変更をコミット＆プッシュ
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "AI Scout Bot"
+          git add index.html
+          git diff --staged --quiet || git commit -m "📰 ニュース自動更新 $(date '+%Y-%m-%d')"
+          git push
